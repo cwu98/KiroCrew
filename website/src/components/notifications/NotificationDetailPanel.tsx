@@ -13,7 +13,7 @@ import StatusNotice from '../StatusNotice'
 import { CronAckBar } from '../../pages/chat'
 import { api } from '../../api/client'
 import type { Notification } from '../../types'
-import { KIND_META, DEFAULT_META, fmtFull, safeInternalUrl, decisionFailedCopy, decidedClearFailedCopy } from './notifMeta'
+import { KIND_META, DEFAULT_META, fmtFull, safeInternalUrl, decisionFailedCopy, endedDecisionFailedCopy, decidedClearFailedCopy } from './notifMeta'
 import { CrewmateNoteFace, CrewmateNoteName, CrewmateRosterError, noteMember } from './CrewmateNoteFace'
 import { safeHttpUrl } from '../../lib/safeUrl'
 import { isGatewayConnected, sendErrorToChat, subscribeGatewayConnected } from '../../utils/errorReport'
@@ -102,7 +102,7 @@ export default function NotificationDetailPanel({ n, onClose, onLeave }: { n: No
   // recorded decision; the feed reads the same rule.
   const decidedDismissFailed = !retired && !!dismissFailed
   const refusalCopy = failureHere && !buttonsWithdrawn ? decisionFailedCopy(failureHere.reason)
-    : endedFailure !== null ? decisionFailedCopy(endedFailure) : null
+    : endedFailure !== null ? endedDecisionFailedCopy(endedFailure) : null
   // Withdrawing the buttons unmounts the one the user just pressed, which
   // drops keyboard focus to <body>. Move it to the panel's Close, which only
   // closes the panel and never removes anything, so a keyboard user pressing
