@@ -21,7 +21,6 @@ scale-F18 deletes markers whose PR merged before the harness.
 | `test_listing_budget.py::test_reconcile_runs_off_the_request` | scale-F9 | the index runs its full stat reconcile inline on the request that trips it (item 2.20) |
 | `test_listing_budget.py::test_index_build_fills_has_messages` | scale-F9 | the listing index leaves `has_messages` unfilled, so the listing asks per row (item 2.10) |
 | `test_listing_budget.py::test_first_listing_after_warm_reads_no_transcripts` | scale-F10 | main has no boot warm of the listing; the first listing pays the cold read (item 2.10) |
-| `test_push_budget.py::test_turn_end_burst_coalesces_and_history_goes_at_once` | scale-F3 | main sends one refresh frame per `turn_end` push; `history` must still go at once (item 2.4) |
 | `test_catalog_budget.py::test_unchanged_catalog_scans_at_most_twice` | scale-F4 | main rescans every agents directory on every catalog fetch |
 | `test_catalog_budget.py::test_one_spec_edit_adds_exactly_one_scan` | scale-F4 | main rescans every agents directory on every catalog fetch |
 | `test_catalog_budget.py::test_one_broken_spec_keeps_the_gate` | scale-F4 | item 2.24 per-entry validity: one unparseable spec turns the gate off. Delete it only when the merged F4 PR body claims item 2.24; if that body defers it, re-point the marker at the item 2.26 PR B |
