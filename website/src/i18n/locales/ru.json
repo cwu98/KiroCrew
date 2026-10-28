@@ -7115,7 +7115,7 @@
       "use_here": "Использовать терминал здесь",
       "use_starting_directory": "Использовать начальный каталог терминала",
       "use_starting_directory_hint": "Открывает новую оболочку в каталоге терминала, заданном на сервере (dashboard.terminal.cwd, иначе домашний каталог сервера). Неудавшаяся команда повторно не отправляется.",
-      "kiro_cli_refused_message": "kiro-cli не открылся для этого чата ({{reason}}). Переподключись, чтобы попробовать снова."
+      "kiro_cli_refused_message": "Этот чат ещё не открыт в kiro-cli ({{reason}}). Выбери «Переподключить», чтобы попробовать снова."
     },
     "codeBlock": {
       "add_comment": "Добавить комментарий",
@@ -9261,17 +9261,24 @@
       "unmute_failed": "Не удалось включить уведомления этой сессии",
       "open_in_kiro_cli": "Открыть в kiro-cli",
       "open_in_kiro_cli_tooltip": "Продолжи этот разговор в kiro-cli в терминале. Этот чат ставится на паузу, пока kiro-cli не завершится.",
-      "open_in_kiro_cli_default_agent": "Открывается с агентом kiro-cli по умолчанию. У {{agent}} нет файла агента, который kiro-cli может загрузить.",
-      "kiro_cli_check_failed": "Не удалось проверить kiro-cli",
+      "open_in_kiro_cli_default_agent": "kiro-cli будет использовать свой агент по умолчанию, а не {{agent}}.",
+      "open_in_kiro_cli_note": "Продолжается в панели терминала. Закрой вкладку, чтобы вернуться; ничего не потеряется.",
+      "kiro_cli_check_failed": "Сейчас недоступно",
       "kiro_cli_blocked_no_session": "разговора пока нет",
+      "kiro_cli_blocked_busy": "дождись окончания ответа",
       "kiro_cli_blocked_no_log": "нет журнала разговора",
       "kiro_cli_blocked_no_project": "нет папки проекта",
       "kiro_cli_blocked_not_installed": "kiro-cli не установлен",
       "kiro_cli_blocked_already_open": "уже открыт",
       "kiro_cli_blocked_unavailable": "недоступно",
-      "kiro_cli_blocked_terminals_full": "вкладки терминала заполнены",
-      "kiro_cli_blocked_project_agent": "у проекта своя конфигурация kiro-cli",
-      "kiro_cli_blocked_ended": "kiro-cli завершился"
+      "kiro_cli_blocked_terminals_full": "сначала закрой одну вкладку терминала",
+      "kiro_cli_blocked_project_agent": "Недоступно: у этого проекта свой агент kiro-cli или настройки MCP",
+      "kiro_cli_blocked_ended": "kiro-cli завершился",
+      "kiro_cli_blocked_preview_off": "выключено в предпросмотре функций",
+      "kiro_cli_blocked_launch_spec": "Crew не удалось записать временную копию агента в ~/.kiro/agents",
+      "kiro_cli_blocked_record": "Crew не удалось сохранить запись об открытии в папке данных",
+      "kiro_cli_blocked_session_file": "Crew не удалось обновить файл сеанса этого чата в ~/.kiro/sessions/cli",
+      "kiro_cli_blocked_starting": "агент ещё запускается, попробуй снова через мгновение"
     },
     "newFolderMoveDialog": {
       "cancel": "Отмена",
@@ -15481,6 +15488,8 @@
         "crew_mode_desc": "Позволяет чату передавать задачи команде и следить за ними на доске.",
         "explore": "Обзор",
         "explore_desc": "Добавляет обзор в верхнюю панель: функции, которые стоит попробовать, твой прогресс и карточку «Попробуй сегодня» в новом чате.",
+        "open_in_kiro_cli": "Открыть в kiro-cli",
+        "open_in_kiro_cli_desc": "Добавляет «Открыть в kiro-cli» в меню сеанса чата, чтобы продолжить этот чат в kiro-cli в панели терминала. Там kiro-cli работает вне песочницы Crew, от твоего имени.",
         "remote_dispatch": "Удалённая отправка",
         "remote_dispatch_desc": "Позволяет чатам Ultra Mode выполнять задачи на машинах, которые ты подключил в Remote Crew. Ничего не отправляется, пока не подключена машина.",
         "remote_dispatch_save_failed": "Не удалось сохранить удалённую отправку. Попробуй ещё раз.",

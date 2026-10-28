@@ -6773,7 +6773,7 @@
       "use_here": "টার্মিনাল এখানে ব্যবহার করুন",
       "use_starting_directory": "টার্মিনালের শুরুর ডিরেক্টরি ব্যবহার করো",
       "use_starting_directory_hint": "সার্ভারে কনফিগার করা টার্মিনাল ডিরেক্টরিতে একটি নতুন শেল খোলে (dashboard.terminal.cwd, না থাকলে সার্ভারের হোম ডিরেক্টরি)। ব্যর্থ কমান্ডটি আবার পাঠানো হয় না।",
-      "kiro_cli_refused_message": "এই চ্যাটের জন্য kiro-cli খোলেনি ({{reason}})। আবার চেষ্টা করতে পুনরায় সংযোগ করো।"
+      "kiro_cli_refused_message": "এই চ্যাট এখনও kiro-cli-এ খোলা হয়নি ({{reason}})। আবার চেষ্টা করতে আবার সংযোগ করো।"
     },
     "codeBlock": {
       "add_comment": "মন্তব্য যোগ করো",
@@ -8847,17 +8847,24 @@
       "unmute_failed": "এই সেশনের নীরবতা তোলা যায়নি",
       "open_in_kiro_cli": "kiro-cli-এ খোলো",
       "open_in_kiro_cli_tooltip": "এই কথোপকথন টার্মিনালে kiro-cli-এ চালিয়ে যাও। kiro-cli বন্ধ না হওয়া পর্যন্ত এই চ্যাট থেমে থাকে।",
-      "open_in_kiro_cli_default_agent": "kiro-cli-এর ডিফল্ট এজেন্ট দিয়ে খোলে। {{agent}}-এর এমন কোনো এজেন্ট ফাইল নেই যা kiro-cli লোড করতে পারে।",
-      "kiro_cli_check_failed": "kiro-cli যাচাই করা যায়নি",
+      "open_in_kiro_cli_default_agent": "kiro-cli নিজের ডিফল্ট এজেন্ট ব্যবহার করবে, {{agent}} নয়।",
+      "open_in_kiro_cli_note": "টার্মিনাল প্যানেলে চলতে থাকে। ফিরতে ট্যাবটি বন্ধ করো; কিছুই হারাবে না।",
+      "kiro_cli_check_failed": "এখন উপলব্ধ নয়",
       "kiro_cli_blocked_no_session": "এখনও কোনো কথোপকথন নেই",
+      "kiro_cli_blocked_busy": "উত্তর শেষ হওয়া পর্যন্ত অপেক্ষা করো",
       "kiro_cli_blocked_no_log": "কথোপকথনের লগ নেই",
       "kiro_cli_blocked_no_project": "প্রজেক্ট ফোল্ডার নেই",
       "kiro_cli_blocked_not_installed": "kiro-cli ইনস্টল করা নেই",
       "kiro_cli_blocked_already_open": "ইতিমধ্যে খোলা",
       "kiro_cli_blocked_unavailable": "উপলব্ধ নয়",
-      "kiro_cli_blocked_terminals_full": "টার্মিনাল ট্যাব পূর্ণ",
-      "kiro_cli_blocked_project_agent": "প্রজেক্টের নিজস্ব kiro-cli কনফিগ আছে",
-      "kiro_cli_blocked_ended": "kiro-cli বন্ধ হয়ে গেছে"
+      "kiro_cli_blocked_terminals_full": "আগে একটি টার্মিনাল ট্যাব বন্ধ করো",
+      "kiro_cli_blocked_project_agent": "উপলব্ধ নয়: এই প্রজেক্টের নিজস্ব kiro-cli এজেন্ট বা MCP সেটিংস আছে",
+      "kiro_cli_blocked_ended": "kiro-cli বন্ধ হয়ে গেছে",
+      "kiro_cli_blocked_preview_off": "ফিচার প্রিভিউতে বন্ধ করা আছে",
+      "kiro_cli_blocked_launch_spec": "Crew ~/.kiro/agents-এ এজেন্টের অস্থায়ী কপি লিখতে পারেনি",
+      "kiro_cli_blocked_record": "Crew তার ডেটা ফোল্ডারে খোলার রেকর্ড সংরক্ষণ করতে পারেনি",
+      "kiro_cli_blocked_session_file": "Crew ~/.kiro/sessions/cli-এ এই চ্যাটের সেশন ফাইল আপডেট করতে পারেনি",
+      "kiro_cli_blocked_starting": "এজেন্ট এখনও চালু হচ্ছে, একটু পরে আবার চেষ্টা করো"
     },
     "newFolderMoveDialog": {
       "cancel": "বাতিল",
@@ -14779,6 +14786,8 @@
         "crew_mode_desc": "একটি চ্যাটকে কাজ একটি crew-কে দিতে আর বোর্ডে সেগুলো দেখতে দেয়।",
         "explore": "এক্সপ্লোর",
         "explore_desc": "উপরের বারে এক্সপ্লোর যোগ করে: চেষ্টা করার মতো ফিচার, তোমার অগ্রগতি, আর নতুন চ্যাটে \"আজ চেষ্টা করো\" কার্ড।",
+        "open_in_kiro_cli": "kiro-cli-এ খোলো",
+        "open_in_kiro_cli_desc": "চ্যাটের সেশন মেনুতে kiro-cli-এ খোলো যোগ করে, যাতে সেই চ্যাট টার্মিনাল প্যানেলে kiro-cli-এ চালিয়ে যেতে পারো। সেখানে kiro-cli Crew-এর স্যান্ডবক্সের বাইরে, তোমার হয়ে চলে।",
         "remote_dispatch": "রিমোট ডিসপ্যাচ",
         "remote_dispatch_desc": "Ultra Mode চ্যাটকে Remote Crew-এ তোমার সংযুক্ত মেশিনে কাজ চালাতে দেয়। কোনো মেশিন সংযুক্ত না হওয়া পর্যন্ত কিছুই পাঠানো হয় না।",
         "remote_dispatch_save_failed": "রিমোট ডিসপ্যাচ সেভ করা যায়নি। আবার চেষ্টা করো।",

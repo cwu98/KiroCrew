@@ -1233,6 +1233,13 @@
       "description": "Only used when the judge above is the small model. Leave it on the judge agent's own model unless you want a cheaper one."
     },
     {
+      "id": "developer.open-in-kiro-cli",
+      "label": "Open in kiro-cli",
+      "tab": "developer",
+      "route": "/settings/developer/feature-previews?highlight=developer.open-in-kiro-cli",
+      "description": "Adds Open in kiro-cli to a chat's session menu, to continue that chat in kiro-cli in the terminal panel. kiro-cli runs there outside Crew's sandbox, as you."
+    },
+    {
       "id": "developer.remote-dispatch",
       "label": "Remote dispatch",
       "tab": "developer",

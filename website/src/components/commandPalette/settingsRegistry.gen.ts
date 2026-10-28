@@ -2122,6 +2122,18 @@ export const SETTINGS_REGISTRY: SettingEntry[] =
     }
   },
   {
+    "id": "developer.open-in-kiro-cli",
+    "label": "Open in kiro-cli",
+    "labelKey": "pages.developer.featurePreviewsTab.open_in_kiro_cli",
+    "description": "Adds Open in kiro-cli to a chat's session menu, to continue that chat in kiro-cli in the terminal panel. kiro-cli runs there outside Crew's sandbox, as you.",
+    "tab": "developer",
+    "type": "toggle",
+    "occurrence": 1,
+    "params": {
+      "sub": "feature-previews"
+    }
+  },
+  {
     "id": "developer.remote-dispatch",
     "label": "Remote dispatch",
     "labelKey": "pages.developer.featurePreviewsTab.remote_dispatch",

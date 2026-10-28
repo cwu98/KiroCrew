@@ -6944,7 +6944,7 @@
       "use_here": "Utiliser le terminal ici",
       "use_starting_directory": "Utiliser le répertoire de démarrage du terminal",
       "use_starting_directory_hint": "Ouvre un nouveau shell dans le répertoire de terminal configuré sur le serveur (dashboard.terminal.cwd, sinon le répertoire personnel du serveur). La commande échouée n’est pas renvoyée.",
-      "kiro_cli_refused_message": "kiro-cli ne s’est pas ouvert pour ce chat ({{reason}}). Reconnecte-toi pour réessayer."
+      "kiro_cli_refused_message": "Ce chat n’est pas encore ouvert dans kiro-cli ({{reason}}). Choisis Reconnecter pour réessayer."
     },
     "codeBlock": {
       "add_comment": "Ajouter un commentaire",
@@ -9054,17 +9054,24 @@
       "unmute_failed": "Impossible de réactiver le son de cette session",
       "open_in_kiro_cli": "Ouvrir dans kiro-cli",
       "open_in_kiro_cli_tooltip": "Poursuis cette conversation dans kiro-cli, dans le terminal. Ce chat est en pause jusqu’à la fermeture de kiro-cli.",
-      "open_in_kiro_cli_default_agent": "S’ouvre avec l’agent par défaut de kiro-cli. {{agent}} n’a pas de fichier d’agent que kiro-cli peut charger.",
-      "kiro_cli_check_failed": "Impossible de vérifier kiro-cli",
+      "open_in_kiro_cli_default_agent": "kiro-cli utilisera son propre agent par défaut, pas {{agent}}.",
+      "open_in_kiro_cli_note": "Continue dans le panneau du terminal. Ferme l’onglet pour revenir ; rien n’est perdu.",
+      "kiro_cli_check_failed": "Indisponible pour le moment",
       "kiro_cli_blocked_no_session": "pas encore de conversation",
+      "kiro_cli_blocked_busy": "attends la fin de la réponse",
       "kiro_cli_blocked_no_log": "journal de conversation manquant",
       "kiro_cli_blocked_no_project": "dossier du projet manquant",
       "kiro_cli_blocked_not_installed": "kiro-cli non installé",
       "kiro_cli_blocked_already_open": "déjà ouvert",
       "kiro_cli_blocked_unavailable": "indisponible",
-      "kiro_cli_blocked_terminals_full": "onglets de terminal pleins",
-      "kiro_cli_blocked_project_agent": "le projet a sa propre configuration kiro-cli",
-      "kiro_cli_blocked_ended": "kiro-cli s’est fermé"
+      "kiro_cli_blocked_terminals_full": "ferme d’abord un onglet de terminal",
+      "kiro_cli_blocked_project_agent": "Indisponible : ce projet a son propre agent kiro-cli ou ses propres réglages MCP",
+      "kiro_cli_blocked_ended": "kiro-cli s’est fermé",
+      "kiro_cli_blocked_preview_off": "désactivé dans les Aperçus de fonctionnalités",
+      "kiro_cli_blocked_launch_spec": "Crew n’a pas pu écrire une copie temporaire de l’agent dans ~/.kiro/agents",
+      "kiro_cli_blocked_record": "Crew n’a pas pu enregistrer la note de cette ouverture dans son dossier de données",
+      "kiro_cli_blocked_session_file": "Crew n’a pas pu mettre à jour le fichier de session de ce chat dans ~/.kiro/sessions/cli",
+      "kiro_cli_blocked_starting": "l’agent démarre encore, réessaie dans un instant"
     },
     "newFolderMoveDialog": {
       "cancel": "Annuler",
@@ -15130,6 +15137,8 @@
         "crew_mode_desc": "Permet à un chat de confier des tâches à une équipe et de les suivre sur un tableau.",
         "explore": "Explorer",
         "explore_desc": "Ajoute Explorer à la barre du haut : des fonctionnalités à essayer, ta progression et une carte « À essayer aujourd'hui » dans une nouvelle discussion.",
+        "open_in_kiro_cli": "Ouvrir dans kiro-cli",
+        "open_in_kiro_cli_desc": "Ajoute « Ouvrir dans kiro-cli » au menu de session d’une discussion, pour la poursuivre dans kiro-cli dans le panneau du terminal. kiro-cli y tourne hors du bac à sable de Crew, en ton nom.",
         "remote_dispatch": "Répartition à distance",
         "remote_dispatch_desc": "Permet aux chats Ultra Mode d'exécuter des tâches sur les machines que tu as connectées dans Remote Crew. Rien n'est envoyé tant qu'aucune machine n'est connectée.",
         "remote_dispatch_save_failed": "Impossible d'enregistrer la répartition à distance. Réessaie.",
