@@ -50,3 +50,16 @@ export function seedSender(rows: readonly SeedRow[], sender: string, slotKey: st
   if (root && crewRootOf(rows.find(row => row.key === sender)) === root) return 'worker'
   return 'session'
 }
+
+
+/** Up to two initials of a sender's session title, for the avatar beside its
+ *  name: the first letter of the first two words, or the first two letters of
+ *  one word; a leading `@` / `#` is skipped. `?` when the title has none. */
+export function senderInitials(title: string): string {
+  // By code point, so a title opening with an emoji or another astral character
+  // yields that whole character, never half of a surrogate pair.
+  const words = title.trim().split(/\s+/).map(w => Array.from(w.replace(/^[@#]+/, ''))).filter(w => w.length)
+  if (!words.length) return '?'
+  const letters = words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2).join('')
+  return letters.toUpperCase()
+}

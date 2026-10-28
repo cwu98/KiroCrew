@@ -688,8 +688,18 @@ _SESSION_RELOAD_NOTICE = (
 #: ``slack_request`` names the Slack message a code channel's first turn delivered
 #: (``slack.code_channels.routing.REQUEST_META_KEY``); a caller-supplied one would
 #: mark a request delivered that never reached the session.
+#: ``relay`` is the cross-session sender the delivery path stamps on a
+#: ``session_send`` row; the transcript draws it as a card naming that session, so a
+#: caller-supplied one would show a message as another session's.
 RESERVED_ROW_META_KEYS = frozenset(
-    {"decisions_strip", HUMAN_TURN_META_KEY, TURN_ACTOR_META_KEY, "slack_sender", "slack_request"}
+    {
+        "decisions_strip",
+        HUMAN_TURN_META_KEY,
+        TURN_ACTOR_META_KEY,
+        "slack_sender",
+        "slack_request",
+        "relay",
+    }
 )
 
 #: The ``steer`` value that means "let Jev choose between the two paths" rather
