@@ -1150,6 +1150,15 @@
     "pages.overviewPage.today_messages_one": "One part of the Today usage line. {{amount}} is the message count, already formatted compactly for the locale. Singular form.",
     "pages.overviewPage.today_messages_other": "One part of the Today usage line. {{amount}} is the message count, already formatted compactly for the locale. Plural form.",
     "pages.overviewPage.today_tokens_one": "One part of the Today usage line. {{amount}} is the token count, already formatted compactly for the locale (e.g. 1.2M). Singular form.",
-    "pages.overviewPage.today_tokens_other": "One part of the Today usage line. {{amount}} is the token count, already formatted compactly for the locale (e.g. 1.2M). Plural form."
+    "pages.overviewPage.today_tokens_other": "One part of the Today usage line. {{amount}} is the token count, already formatted compactly for the locale (e.g. 1.2M). Plural form.",
+    "pages.settings.appUpdates.title": "Heading of the Settings > About group that controls whether installed apps (add-ons from the App Store) update themselves.",
+    "pages.settings.appUpdates.mode_off": "Value of 'Update apps automatically': only a notification, nothing is installed.",
+    "pages.settings.appUpdates.mode_ask": "Value of 'Update apps automatically': a notification with an Update button the user presses.",
+    "pages.settings.appUpdates.mode_on": "Value of 'Update apps automatically': new versions install without asking. An adjective, not a verb.",
+    "pages.settings.appUpdates.interval_hours": "Option in the app update check interval picker; {{hours}} is a number of hours, 'h' is the hour unit abbreviation.",
+    "pages.settings.appUpdates.interval_days": "Option in the app update check interval picker; {{days}} is a number of days, 'd' is the day unit abbreviation.",
+    "pages.appDetailPage.auto_update_follow": "Option on one app's page meaning 'use the global app updates setting'; {{mode}} is that setting's current value (Off, Ask or Automatic), already translated.",
+    "pages.appDetailPage.auto_update_always": "Option on one app's page: install every new version of this app automatically.",
+    "pages.appDetailPage.auto_update_never": "Option on one app's page: never update this app automatically, keep the installed version."
   }
 }
