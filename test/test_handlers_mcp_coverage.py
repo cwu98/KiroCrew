@@ -427,6 +427,44 @@ class TestRemove:
         assert sandbox.synced == [("ghost", False, True)]
 
     @pytest.mark.asyncio
+    async def test_removes_add_custom_store_entry(
+        self, sandbox: SimpleNamespace, no_capability_manager: MagicMock
+    ) -> None:
+        """An Add Custom server lives ONLY in the Kiro Crew store
+        (``<data home>/mcp.json``), never the Kiro global. Remove must delete
+        it there and report removed:true. Red on main: the handler popped the
+        global file only, so the entry stayed and the response said
+        removed:false ("MCP remove: <name> not found in global mcp.json")."""
+        _write_global(sandbox, {})
+        store = mcp_mod._KIROCREW_MCP_JSON
+        store.parent.mkdir(parents=True, exist_ok=True)
+        store.write_text(
+            json.dumps({"mcpServers": {"weather": {"command": "npx", "disabled": True}}}),
+            encoding="utf-8",
+        )
+        resp = await mcp_mod.api_mcp_remove(_request({"name": "weather"}))
+        assert resp.status == 200
+        assert _payload(resp) == {"ok": True, "name": "weather", "removed": True}
+        after = json.loads(store.read_text(encoding="utf-8")).get("mcpServers", {})
+        assert "weather" not in after
+        assert sandbox.synced == [("weather", False, True)]
+
+    @pytest.mark.asyncio
+    async def test_global_entry_still_removes_as_before(
+        self, sandbox: SimpleNamespace, no_capability_manager: MagicMock
+    ) -> None:
+        """A server in the Kiro global (not the store) removes exactly as
+        before: the global entry is gone and removed:true, and an empty or
+        absent store does not change that answer."""
+        _write_global(sandbox, {"srv": {"command": "x"}, "keep": {"command": "y"}})
+        resp = await mcp_mod.api_mcp_remove(_request({"name": "srv"}))
+        assert resp.status == 200
+        assert _payload(resp) == {"ok": True, "name": "srv", "removed": True}
+        assert "srv" not in _read_global(sandbox)
+        assert "keep" in _read_global(sandbox)
+        assert sandbox.synced == [("srv", False, True)]
+
+    @pytest.mark.asyncio
     async def test_capability_manager_failure_is_best_effort(
         self, sandbox: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
     ) -> None:

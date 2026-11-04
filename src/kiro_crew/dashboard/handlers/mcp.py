@@ -57,6 +57,7 @@ from kiro_crew.dashboard.handlers.mcp_agent_sync import (
 )
 from kiro_crew.dashboard.handlers.mcp_config_entries import (
     _find_server_spec_anywhere,
+    _remove_kirocrew_entry,
     _scope_has_entry,
     _set_kirocrew_entry,
     _set_scope_entry,
@@ -795,18 +796,28 @@ async def api_mcp_remove(request: web.Request) -> web.Response:
         except Exception as exc:
             logger.warning("capability-manager mcp uninstall failed for %s: %s", name, exc)
 
-    # Remove from global mcp.json
+    # Remove from both the Kiro global (~/.kiro/settings/mcp.json) and the
+    # Kiro Crew store (<data home>/mcp.json). The Add Custom path writes a
+    # server ONLY to the store, so removing one of those left the entry (and
+    # its projection into the agent spec) in place while the response said
+    # removed:false. ``removed`` is true when EITHER store held the entry.
     async with _get_mcp_lock():
         try:
             data = loads_user_json(_GLOBAL_MCP_JSON.read_text(encoding="utf-8"))
         except (FileNotFoundError, json.JSONDecodeError):
             data = {"mcpServers": {}}
-        removed = data.get("mcpServers", {}).pop(name, None) is not None
-        if removed:
+        removed_global = data.get("mcpServers", {}).pop(name, None) is not None
+        if removed_global:
             _write_mcp_json(data)
             logger.info("MCP remove: removed %s from global mcp.json", name)
         else:
             logger.warning("MCP remove: %s not found in global mcp.json", name)
+
+        store_result = await asyncio.to_thread(_remove_kirocrew_entry, name)
+        removed_store = store_result == "removed"
+        if removed_store:
+            logger.info("MCP remove: removed %s from Kiro Crew store", name)
+        removed = removed_global or removed_store
 
         # Sync kirocrew.json
         from kiro_crew.dashboard.handlers.agents import _get_config_lock  # noqa: F811
@@ -1011,7 +1022,6 @@ if TYPE_CHECKING:  # every owner-defined name in _EXPORTS, for type checkers and
     from kiro_crew.dashboard.handlers.mcp_config_entries import (  # noqa: F401
         _get_kirocrew_entry,
         _remove_from_agent_file,
-        _remove_kirocrew_entry,
         _replace_kirocrew_spec,
         _rmw_remove_entry,
     )
