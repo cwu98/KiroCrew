@@ -710,7 +710,17 @@ export default function CommandBarOverlay({
           )}
           <input
             ref={inputRef}
-            autoFocus
+            // Focus entry is the dialog focus trap's to own, not `autoFocus`'s:
+            // the trap (useDialogFocusTrap above) focuses the first control — this
+            // input, on a fresh open where no scope chip precedes it — in its open
+            // effect, and that same effect records the element to restore focus to
+            // on close. `autoFocus` fires in the commit phase, ahead of that effect,
+            // so an `autoFocus` here would make the effect read this input as the
+            // already-focused element and record IT as the restore target; closing
+            // the bar would then aim focus at a detached node and drop the keyboard
+            // user on `<body>`. Leaving focus entry to the trap keeps the input
+            // focused on open while the restore target stays the real opener, so
+            // Escape returns focus to the control that opened the bar.
             value={query}
             // Deliberately NO `maxLength`. It looked like defence in depth and was the
             // opposite: the browser clips a paste to the limit BEFORE `onChange`, so a
