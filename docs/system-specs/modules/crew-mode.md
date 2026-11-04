@@ -4036,16 +4036,17 @@ runs the agent it recorded. A `template` record (a worker included) stays exact
   ledger keeps the text above unchanged, and no loop is taught. The mate
   conductor maps the `goal-conductor` skill (so `patrol_budget.py` is in its
   skill scope) and the `dashboard` skill its prompt names only when its spec
-  passes the same check after the governance ceiling. That mapping is ADDED
-  to the trees the conductor inherits (`~/.kiro/skills` and a trusted
-  workspace `.kiro/skills`), never put in their place. The rule lives in one
-  function, `skill_scope.mate_conductor_scope`: `agent_skill_globs` returns
-  through it on every path whatever `inherit_defaults` its caller passes (the
-  session scope, the injection plan, the per-turn triggered-skill filter), and
-  KAS's `deny skill` rule (`acp/kas_skill_scope._spec_globs`) calls it too, so
-  the user's own skills stay offered on both harnesses; without it the spec
-  maps no skill and keeps the skills it inherits (`test_crewmate_prompts.py`,
-  `test_mate_conductor_agent.py`).
+  passes the same check after the governance ceiling. Like the Ultra Mode
+  conductor, a mapped mate conductor loads ONLY those mapped skills: the
+  user's `~/.kiro/skills` and a workspace `.kiro/skills` are not added to the
+  mapping, on any caller (`agent_skill_globs`, the session scope, the
+  injection plan, the per-turn triggered-skill filter) and on KAS's `deny
+  skill` rule (`acp/kas_skill_scope._spec_globs`) alike. User skills reach a
+  crewmate through its worker, the same way user MCP servers do. Without the
+  ledger the spec maps no skill and keeps the skills it inherits
+  (`test_crewmate_prompts.py`, `test_mate_conductor_agent.py`). Who gets which
+  MCP servers and skills is summed up in
+  [Agent MCP servers and skills](../../architecture/agent-mcp-and-skill-reach.md).
 - **The worker**, `kirocrew-mate-worker`, is what the conductor hands work to:
   its `session_create` opens the worker template on the crewmate's own
   workspace, store and member identity whatever `agent` it names, because the

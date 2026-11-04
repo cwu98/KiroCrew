@@ -345,14 +345,15 @@ def test_a_crewmate_on_the_conductor_reads_the_installed_conductor_spec(tmp_path
     assert member_mate_tools.binding_has_ledger_tools(binding) is False
 
 
-# -- the mapping ADDS to the user's skills, for every caller of the scope -------- #
+# -- the mapping is the whole scope, for every caller, as on the Ultra Mode conductor #
 
 
 @pytest.fixture
 def user_skills(tmp_path, monkeypatch):
     """A ledger-mounted conductor beside a user ``~/.kiro/skills`` skill and a trusted
-    workspace ``.kiro/skills`` skill. Returns ``(spec, project, goal, user, workspace)``
-    where the last three are the globs each caller must keep."""
+    workspace ``.kiro/skills`` skill. Returns ``(spec, project, goal, user, workspace)``:
+    ``goal`` is the mapped glob each caller keeps, ``user`` and ``workspace`` the
+    inherited trees no caller may add back."""
     from kiro_crew import skill_trust
     from kiro_crew.agent_discovery_parts.skill_scope import expand_skill_uri
 
@@ -416,16 +417,16 @@ def _scope_via(caller: str, project) -> list[str]:
         "injection_plan_kas",
     ],
 )
-def test_every_caller_keeps_the_users_skills_beside_goal_conductor(user_skills, caller):
+def test_every_caller_scopes_the_conductor_to_its_mapped_skills(user_skills, caller):
     _spec, project, goal, user, workspace = user_skills
     scope = _scope_via(caller, project)
     assert goal in scope
-    assert user in scope
-    assert workspace in scope
+    assert user not in scope
+    assert workspace not in scope
 
 
-def test_kas_deny_rule_keeps_the_users_skills_beside_goal_conductor(user_skills):
-    """KAS loads both trees itself; Crew's ``deny skill`` rule must exclude them."""
+def test_kas_deny_rule_denies_the_users_skills_to_the_mapped_conductor(user_skills):
+    """KAS loads both trees itself; Crew's ``deny skill`` rule must not spare them."""
     from kiro_crew.acp import kas_skill_scope
     from kiro_crew.mate_worker import MATE_CONDUCTOR_AGENT
 
@@ -433,19 +434,9 @@ def test_kas_deny_rule_keeps_the_users_skills_beside_goal_conductor(user_skills)
     globs = kas_skill_scope.scope_globs(
         MATE_CONDUCTOR_AGENT, spec, agents_dir=paths_mod.mate_agents_dir(), work_dir=project
     )
-    assert globs is not None and {goal, user, workspace} <= set(globs)
+    assert globs is not None and goal in globs
+    assert user not in globs and workspace not in globs
     rules = kas_skill_scope.skill_scope_rules(globs, work_dir=project)
+    assert rules, "a mapped scope must deny the skills outside it"
     kept = {name for rule in rules for name in rule.get("exclude", [])}
-    assert {"my-own", "team-skill"} <= kept
-    assert not any(rule.get("match") for rule in rules)
-
-
-def test_the_worker_and_other_agents_keep_the_mapped_only_rule():
-    from kiro_crew.agent_discovery_parts.skill_scope import mate_conductor_scope
-    from kiro_crew.mate_worker import MATE_CONDUCTOR_AGENT, MATE_WORKER_AGENT
-
-    spec = {"tools": ["read"], "mcpServers": {"kirocrew-core": {}}}
-    assert mate_conductor_scope(MATE_WORKER_AGENT, spec, ["/a"], None) == ["/a"]
-    assert mate_conductor_scope("custom", spec, ["/a"], None) == ["/a"]
-    # Unmapped: the inheritance rule of its own caller decides, not this one.
-    assert mate_conductor_scope(MATE_CONDUCTOR_AGENT, spec, [], None) == []
+    assert not {"my-own", "team-skill"} & kept
