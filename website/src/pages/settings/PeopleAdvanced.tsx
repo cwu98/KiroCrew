@@ -20,6 +20,7 @@ const PATH = {
   crew_concurrency: 'dashboard.shared_crew.crew_concurrency',
   typing_idle_seconds: 'dashboard.shared_crew.typing_idle_seconds',
   tailnet_direct: 'dashboard.shared_crew.tailnet_direct',
+  ssm: 'dashboard.shared_crew.ssm',
 } as const
 
 type Field = keyof typeof PATH
@@ -177,6 +178,15 @@ export function PeopleAdvanced() {
             onChange={v => save.mutate({ field: 'tailnet_direct', value: v })}
             disabled={locked}
             label={i18nT('sharedCrew.adv_direct')}
+          />
+        </Row>
+        <Row label={i18nT('sharedCrew.adv_ssm')}>
+          <SchemaRestartBadge configKey={PATH.ssm} />
+          <Toggle
+            checked={overlay.shown(PATH.ssm, section.ssm === true)}
+            onChange={v => save.mutate({ field: 'ssm', value: v })}
+            disabled={locked}
+            label={i18nT('sharedCrew.adv_ssm')}
           />
         </Row>
         {save.isError && (

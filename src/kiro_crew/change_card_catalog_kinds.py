@@ -193,6 +193,8 @@ _SETTING_ORDER: dict[str, tuple[Any, ...]] = {
     "dashboard.shared_crew.admission_enabled": (True, False),
     # On, the dashboard also listens on this machine's tailnet addresses.
     "dashboard.shared_crew.tailnet_direct": (False, True),
+    # On, the dashboard also listens on a loopback port for AWS SSM port forwards.
+    "dashboard.shared_crew.ssm": (False, True),
     "skills.approval_required": (True, False),
     "telemetry.beacon_enabled": (False, True),
     # Kiro's own Chromium holds none of the person's logins; ``auto`` and

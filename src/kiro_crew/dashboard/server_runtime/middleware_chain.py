@@ -45,6 +45,7 @@ if TYPE_CHECKING:
         tailnet_identity_unknown,
         token_auth_middleware,
     )
+    from kiro_crew.dashboard.ssm_gate import GateRef as SsmGateRef
 
 
 def _tailnet_origin_enabled() -> bool:
@@ -123,6 +124,7 @@ def _install_dashboard_middlewares(
     configured_host: str,
     dashboard_url: str,
     tailnet_direct: DirectGate | GateRef | None = None,
+    ssm_gate: SsmGateRef | None = None,
 ) -> None:
     """Install the dashboard's middleware chain on *app*, outermost first.
 
@@ -251,6 +253,7 @@ def _install_dashboard_middlewares(
             spa_shell_handler=handlers.index,
             tailnet_trust=tailnet_trust,
             tailnet_direct=tailnet_direct,
+            ssm_gate=ssm_gate,
         ),
         sel_audit_middleware,
         # Inner to token auth (it reads the ``app`` claim) and to the audit
