@@ -21,17 +21,20 @@ interface CrewModeChipProps {
   describedBy?: string
   /** The mid-chat switch (right of the permission button) has its own id. */
   testId?: string
+  /** The tooltip while pressed, when it differs from the new-chat one. */
+  pressedHint?: string
 }
 
 /** The composer's Ultra Mode switch. On a NEW chat (before its first message)
  *  it toggles in place -- pressed is on -- and the first message locks it. In a
  *  plain chat that already has messages the same chip, unpressed, sits right of
- *  the permission button and turns the chat on one way. */
-export function CrewModeChip({ onTurnOn, pressed = false, onTurnOff, disabled = false, busy = false, describedBy, testId = 'crew-mode-chip' }: CrewModeChipProps) {
+ *  the permission button and turns the chat on; once on it stays there pressed,
+ *  and a click switches the chat back to a normal chat. */
+export function CrewModeChip({ onTurnOn, pressed = false, onTurnOff, disabled = false, busy = false, describedBy, testId = 'crew-mode-chip', pressedHint }: CrewModeChipProps) {
   const ref = useRef<HTMLElement | null>(null)
   const hint = busy
     ? i18nT('components.crewMode.chip_hint_busy')
-    : pressed ? i18nT('components.crewMode.chip_hint_pressed') : i18nT('components.crewMode.chip_hint_off')
+    : pressed ? pressedHint || i18nT('components.crewMode.chip_hint_pressed') : i18nT('components.crewMode.chip_hint_off')
   const state = busy
     ? 'aria-disabled:cursor-not-allowed aria-disabled:opacity-60'
     : 'disabled:cursor-default disabled:opacity-60'

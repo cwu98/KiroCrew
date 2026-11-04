@@ -535,6 +535,14 @@ async def _start_next_queued_turn(
     if _gateway_shutdown_requested(state):
         return False
 
+    # An Ultra Mode "Pause all" holds the root and every member it stopped: the
+    # queue stays as it is until Resume all (or the member's own Continue) lets it go.
+    # Imported here: this module's functions run on the composing module's globals.
+    from kiro_crew import crew_pause
+
+    if slot._queue and crew_pause.holds_slot(slot):
+        return False
+
     # A drain that follows a turn's end marks that end before it writes anything:
     # the drop notices, the held-note flush and the cancellation notices below
     # belong to what comes next, not to the turn that ended. Held back only while

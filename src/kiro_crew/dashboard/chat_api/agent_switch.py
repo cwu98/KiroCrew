@@ -275,6 +275,69 @@ def _has_user_message(slot: _ChatSlot) -> bool:
     return any(isinstance(row, dict) and row.get("role") == "user" for row in slot.messages)
 
 
+def _switch_back_allowed(
+    slot: _ChatSlot, agent_name: str, agent_kind: Any, caller: SlotAgentSwitchCaller
+) -> bool:
+    """Whether this is the person switching a mid-chat Ultra Mode chat back.
+
+    Only a chat that was switched to Ultra Mode after it had messages has a prior
+    agent on record (``crew_pause.prior_agent``); only the dashboard owner, never an
+    app, a turn's ``/agent`` or the migration, may move it; and only onto that agent.
+    """
+    if caller.app or not caller.owner or caller.own_turn or caller.crew_mode_migration:
+        return False
+    from kiro_crew import crew_mode, crew_pause
+
+    prior = crew_pause.prior_agent(slot.key)
+    # The template namespace spelled out: a name-only pick resolves to a crewmate
+    # of the same name first.
+    if not prior or prior["agent_kind"] == "member" or agent_kind != "template":
+        return False
+    if prior["agent"]:
+        return agent_name == prior["agent"]
+    # A chat that was on the default agent (it named none) goes back to a plain
+    # template, never onto another conductor.
+    return bool(agent_name) and not crew_mode.stamp_for_switch(agent_name, "template")
+
+
+async def _prewrite_switch_back(
+    slot: _ChatSlot, agent_name: str, agent_kind: Any, caller: SlotAgentSwitchCaller
+) -> tuple[str, str] | web.Response | None:
+    """Record the prior agent of a mid-chat Ultra Mode turn-on, ahead of the switch.
+
+    Returns what it recorded, ``None`` when this switch is no such turn-on, or the
+    503 to answer when the record cannot be written. A switch that is then refused
+    leaves a record a later turn-on overwrites; it is read only while the chat is
+    an Ultra Mode root.
+    """
+    from kiro_crew import crew_mode, crew_pause
+
+    if (
+        caller.crew_mode_migration
+        or slot.crew_mode_agent
+        or crew_mode.slot_is_crew_mode_root(slot)
+        or not crew_mode.stamp_for_switch(agent_name, agent_kind or "template")
+        or str(slot.agent or "") in crew_mode.conductor_agents()
+        or not _has_user_message(slot)
+    ):
+        return None
+    prior = (str(slot.agent or ""), str(slot.agent_kind or "template"))
+    try:
+        await asyncio.to_thread(crew_pause.remember_prior, slot.key, *prior)
+    except Exception:
+        logger.warning(
+            "agent switch: switch-back record for %s not written", slot.key, exc_info=True
+        )
+        return web.json_response(
+            {
+                "error": "Could not save the chat's previous agent. Try again.",
+                "code": "switch_back_unsaved",
+            },
+            status=503,
+        )
+    return prior
+
+
 def _crew_mode_lock_refusal(
     slot: _ChatSlot, agent_name: str, agent_kind: Any, caller: SlotAgentSwitchCaller
 ) -> web.Response | None:
@@ -309,6 +372,8 @@ def _crew_mode_lock_refusal(
         and not crew_mode.stamp_for_switch(agent_name, "template")
         and not _has_user_message(slot)
     ):
+        return None
+    if _switch_back_allowed(slot, agent_name, agent_kind, caller):
         return None
     if agent_name == crew_mode.crew_mode_agent() and agent_kind == "template":
         # Onto the configured conductor, in the template namespace: still Crew Mode,
@@ -464,6 +529,8 @@ async def switch_slot_agent(
     # lock's KEY is only known after the in-lock read below, and locking on
     # any earlier read could leave this holding the wrong session lock.
     crew_turned_on = False
+    # Ultra Mode switched off again (a mid-chat switch back) releases its pause.
+    left_crew_mode = False
     async with contextlib.AsyncExitStack() as _stack:
         await _stack.enter_async_context(slot._lock)
         # Re-authorize after the await above (see _slot_replaced_while_queued):
@@ -519,6 +586,12 @@ async def switch_slot_agent(
         locked = _crew_mode_lock_refusal(slot, agent_name, agent_kind, caller)
         if locked is not None:
             return locked
+        # Ultra Mode turning on in a chat that already has messages: record the
+        # agent it leaves BEFORE anything changes, so a write that fails refuses
+        # the switch instead of leaving a chat that cannot switch back.
+        prewritten_prior = await _prewrite_switch_back(slot, agent_name, agent_kind, caller)
+        if isinstance(prewritten_prior, web.Response):
+            return prewritten_prior
         owner_request = caller.owner
         if not owner_request:
             # Permitted chat users keep template and legacy V1 choices, but
@@ -874,6 +947,7 @@ async def switch_slot_agent(
             and prior_agent not in crew_mode.conductor_agents()
             and str(prior_agent or "") != prior_crew_stamp
         )
+        left_crew_mode = bool(prior_crew_stamp) and not new_crew_stamp
         # The metadata line carries the stamp only when this switch moves one, so a
         # chat that never turned Crew Mode on keeps the line it had.
         crew_stamp_moves = bool(new_crew_stamp or prior_crew_stamp)
@@ -1445,6 +1519,25 @@ async def switch_slot_agent(
         from kiro_crew.metrics import crew_mode as crew_mode_metrics
 
         crew_mode_metrics.record_turned_on("switch", repeat=bool(_cm.known_roots() - {slot.key}))
+    from kiro_crew import crew_pause
+
+    # The switch has committed: a record that cannot be written is logged, never
+    # turned into a failed answer for a switch that already happened. The prior
+    # agent is written only BEFORE the switch (`_prewrite_switch_back`).
+    if left_crew_mode:
+        try:
+            await asyncio.to_thread(crew_pause.switched_back, slot.key)
+        except Exception:
+            # Live state already follows the switch (``switched_back`` publishes it);
+            # only the file is behind, and a reload re-reads the chat as no root.
+            logger.warning(
+                "agent switch: Ultra Mode record for %s not saved", slot.key, exc_info=True
+            )
+        # The chat is a normal chat again: what it queued while held runs now.
+        # Its crew members stay held until each one's own Continue.
+        from kiro_crew.dashboard.chat_turn.queue_drain import _drain_parked_queues
+
+        await _drain_parked_queues(state, [slot.key])
     # The migration moving a chat that never turned Crew Mode on changes nothing on
     # its page either; a stamped root's move keeps the board it has (nothing is
     # adopted over a page already chosen).

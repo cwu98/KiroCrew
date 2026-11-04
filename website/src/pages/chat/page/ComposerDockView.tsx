@@ -280,6 +280,8 @@ interface ComposerDockViewProps {
   /** A plain chat that already has messages: the same chip sits right of the
    *  permission button and turns this chat into an Ultra Mode chat, one way. */
   crewModeMidChatOffered?: boolean
+  /** Set on a chat switched to Ultra Mode mid-chat: the same chip, pressed, switches it back. */
+  switchBackCrewMode?: () => void
   turnOnCrewMode: () => void
   /** Set only while Crew Mode is on and no message is sent yet: the composer's
    *  Crew Mode mark is then a toggle that turns it off. */
@@ -328,7 +330,7 @@ export default function ComposerDockView({
   effortSupported, effortAutoNote = false, modelMarker, pinModelToAgentMut, projectBranch, projectGit, projectGitError, shownModel, cardOwnsRecovery, continuable, continuing, handleContinue, interrupted, dockGutter, dockRef,
   endQuoteFlight, flyingQuote, inputAreaRef, isAtBottom, answerQuestionCard, handleCancelQueued, handleEditQueued, handleInterruptQueued, handleReorderQueued, keepQuestionAnswer, queuedMessages,
   queuePendingIds, steer, stopTurn, systemDeliveryCount, handleEditLastRequest, composerOptimizing, handleOptimizingChange, memorySwitching, showComposerMemoryChip, switchMemoryMode, composerAbove, typingLock,
-  composerSessionControls, crewModeOffered, crewModeMidChatOffered = false, turnOnCrewMode, turnOffCrewMode, crewModeSwitching = null, agentPickerHidden = false, crewChipPressed = false, agentSwitchLocked = false, steerWorker, steerWorkerRoot = '',
+  composerSessionControls, crewModeOffered, crewModeMidChatOffered = false, switchBackCrewMode, turnOnCrewMode, turnOffCrewMode, crewModeSwitching = null, agentPickerHidden = false, crewChipPressed = false, agentSwitchLocked = false, steerWorker, steerWorkerRoot = '',
 }: ComposerDockViewProps) {
   // A chat on a Session Environment runs in its workspace; see ChatPane.
   const runsHere = useSlotRunsHere(currentSlot && currentSlot.executor !== 'remote' ? currentSlot.key : null)
@@ -768,8 +770,11 @@ export default function ComposerDockView({
               compacting={!!currentSlot?.compacting}
               stopDeclined={!!currentSlot?.stop_declined}
               approvalMode={displayMode}
-              afterApprovalMode={crewModeMidChatOffered
-                ? <CrewModeChip testId="crew-mode-switch" onTurnOn={turnOnCrewMode} busy={crewModeBusy} disabled={memorySwitching || !!crewModeSwitching} />
+              afterApprovalMode={crewModeMidChatOffered || switchBackCrewMode
+                // Off: turns the chat on. On after a mid-chat switch: pressed, and a
+                // click switches it back to a normal chat.
+                ? <CrewModeChip testId="crew-mode-switch" onTurnOn={turnOnCrewMode} pressed={!!switchBackCrewMode} onTurnOff={switchBackCrewMode}
+                  pressedHint={switchBackCrewMode ? i18nT('components.crewMode.ultra_switch_back_hint') : undefined} busy={crewModeBusy} disabled={memorySwitching || !!crewModeSwitching} />
                 : undefined}
               providerId={provider.id}
               reasoningEffort={effectiveEffort}

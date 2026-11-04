@@ -21,6 +21,20 @@ def _admission_queued(slot_key: str) -> bool:
     return admission_pending(slot_key)
 
 
+def _crew_switch_back(slot_key: str) -> dict[str, Any]:
+    """The row's switch-back fields from ``crew_pause.prior_agent``."""
+    from kiro_crew import crew_pause
+
+    prior = crew_pause.prior_agent(slot_key)
+    # A crewmate is never switched back to (the switch refuses it), so not offered.
+    if prior is not None and prior.get("agent_kind") == "member":
+        prior = None
+    return {
+        "crew_mode_switch_back": prior is not None,
+        "crew_mode_prior_agent": prior["agent"] if prior else "",
+    }
+
+
 def summary_rows(slot: Any) -> list[Any]:
     """The rows a slot's sidebar summary reads, without loading a pending window.
 
@@ -470,6 +484,10 @@ class SlotProjection:
             # The agent Crew Mode turned on with, "" when it never did
             # (``crew_mode.stamp_rows`` and the dashboard's ``runsCrewMode`` read it).
             "crew_mode_agent": redact(getattr(slot, "crew_mode_agent", "") or ""),
+            # A chat switched to Ultra Mode mid-chat can switch back
+            # (``crew_mode_switch_back``) to the agent it had (``crew_mode_prior_agent``,
+            # "" for the default agent). A chat born in Ultra Mode stays locked.
+            **_crew_switch_back(slot.key),
             "effective_agent": resolve_effective_agent(slot.agent, slot.project or None),
             "model": slot.model,
             # Whether this session's turns ask Jev which model tier to run on

@@ -281,6 +281,11 @@ export interface ChatSlot extends TurnIdentityFields {
    *  it never turned on: it marks the chat as Crew Mode until the gateway moves it onto
    *  the configured `agent.crew_mode_agent`. */
   crew_mode_agent?: string
+  /** The chat was switched to Ultra Mode mid-chat and can switch back (a chat
+   *  born in Ultra Mode cannot). */
+  crew_mode_switch_back?: boolean
+  /** The agent it goes back to; "" for the default agent. */
+  crew_mode_prior_agent?: string
   /** Whether THIS gateway process stamped `created_by` at mint, rather than
    * rehydrating it from the transcript. `created_by` is restored from a metadata
    * line an agent's file tools can edit, so on its own it is a claim; this says
@@ -712,6 +717,13 @@ export interface SubagentInfo {
 
 export interface SessionInfo {
   key: string; title?: string; messages: number; created?: string; modified?: number; agent?: string; memory_mode?: 'persistent' | 'incognito' | 'temporary'
+}
+
+/** A paused crew, on the worker list while Pause all stands: the members the
+ *  pause stopped (and has not handed back) and when it was pressed. */
+export interface CrewPause {
+  stopped: string[]
+  paused_at: string
 }
 
 /** One row of a Crew Mode root's worker list (`GET /api/chat/slots/{root}/crew-workers`). */

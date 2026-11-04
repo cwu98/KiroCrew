@@ -104,6 +104,31 @@ async def api_chat_slot_continue(request: web.Request) -> web.Response:
     if refusal is not None:
         return refusal
 
+    # Ultra Mode "Pause all": the person's own Continue on a member the pause
+    # stopped hands that one member back. A paused root resumes from the Board.
+    # Imported here: this module's functions run on chat_handlers' globals.
+    import asyncio
+
+    from kiro_crew import crew_mode, crew_pause
+
+    if crew_pause.root_paused(slot.key) and crew_mode.slot_is_crew_mode_root(slot):
+        return web.json_response(
+            {"error": "this crew is paused; resume it from the Board", "code": "crew_paused"},
+            status=409,
+        )
+    if not request.get("app", "") and crew_pause.holds_turn(slot.key):
+        await asyncio.to_thread(crew_pause.release, slot.key)
+        queue = list(slot._queue or [])
+        if queue and not slot.running and not all(e.get(RESTORED_QUEUE_KEY) for e in queue):
+            # What queued while it was paused carries the thread on, as on resume.
+            # A queue restored from disk is never drained on its own: Continue
+            # below runs over it, as it does on any interrupted chat.
+            from kiro_crew.dashboard.handlers.crew_pause import drain_held_queue
+
+            if await drain_held_queue(state, slot) == "drained":
+                state.push_slots_update()
+                return web.json_response({"ok": True, "slot": slot.key})
+
     try:
         await continue_slot_turn(
             state,

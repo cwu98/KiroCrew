@@ -62,6 +62,8 @@ export interface CrewRowAttentionProps {
   running: number
   /** Every crew member finished. */
   done: boolean
+  /** Pause all stands: the row says "Paused" and nothing else. */
+  paused?: boolean
   /** The longest-stalled crew member and how long it has been quiet, in ms. */
   stalledName?: string
   stalledForMs?: number
@@ -70,8 +72,15 @@ export interface CrewRowAttentionProps {
 
 const PART_CLS = 'inline-flex items-center gap-1 h-4 text-[12px] whitespace-nowrap tabular-nums'
 
-export function CrewRowAttention({ needsYou, stalled, running, done, stalledName, stalledForMs, title }: CrewRowAttentionProps) {
+export function CrewRowAttention({ needsYou, stalled, running, done, paused, stalledName, stalledForMs, title }: CrewRowAttentionProps) {
   const { ref, hidden } = useWrappedAwayCount<HTMLSpanElement>(`${needsYou}/${stalled}/${running}`)
+  if (paused) {
+    return (
+      <span className={`${PART_CLS} crew-tone-paused font-medium`} data-testid="crew-root-paused" title={title}>
+        <Pause size={ICON_PX} aria-hidden="true" className="inline-block shrink-0" />{i18nT('components.crewMode.ultra_paused')}
+      </span>
+    )
+  }
   if (needsYou <= 0 && stalled <= 0 && running <= 0) {
     if (!done) return null
     return (

@@ -459,6 +459,14 @@ def _register_mcp_routes(app: web.Application) -> None:
         "/api/chat/slots/{slot}/crew-workers/{worker}/recap",
         _deferred("crew_worker_recap", "api_crew_worker_recap"),
     )
+    # Ultra Mode "Pause all" / "Resume all": the Stop and Continue mechanisms over
+    # the root's whole crew, under the same owner-only, no-app gate.
+    app.router.add_post(
+        "/api/chat/slots/{slot}/crew-workers/pause", _deferred("crew_pause", "api_crew_pause")
+    )
+    app.router.add_post(
+        "/api/chat/slots/{slot}/crew-workers/resume", _deferred("crew_pause", "api_crew_resume")
+    )
     app.router.add_get("/api/crons", handlers.api_crons)
     app.router.add_post("/api/crons", handlers.api_crons_create)
     app.router.add_delete("/api/crons", handlers.api_cron_batch_delete)

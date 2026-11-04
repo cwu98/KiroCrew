@@ -1072,12 +1072,16 @@ async def _api_chat_send(request: web.Request) -> web.StreamResponse:
         slot.theme_consent = theme_consent
         slot.theme_consent_sha = theme_consent_sha
 
+    from kiro_crew import crew_pause
     from kiro_crew.dashboard import responsive_chat
 
+    # Ultra Mode "Pause all" holds this session: a send is queued, not started,
+    # and waits for Resume all (or the session's own Continue).
+    _crew_paused = crew_pause.holds_slot(slot)
     _responsive_eligible = False
     # The responsive path records its send as the person's own
     # (`directive_user_origin=True`), so only a person's send may take it.
-    if _person_send and (body.get("responsive") is True or steer):
+    if _person_send and not _crew_paused and (body.get("responsive") is True or steer):
         _responsive_eligible = responsive_chat.eligible(
             request,
             slot,
@@ -1106,7 +1110,7 @@ async def _api_chat_send(request: web.Request) -> web.StreamResponse:
     if _replay is not None:
         return _sc_entry.chat_replay_response(_replay, slot_key=slot.key)
 
-    if slot.turn_running or slot._turn_admission_reserved:
+    if slot.turn_running or slot._turn_admission_reserved or _crew_paused:
         # Mid-turn steer: inject into the RUNNING turn instead of queueing for
         # the next turn. Gated on an explicit `steer` flag + a live, steer-capable
         # inner AcpClient that _run_chat published on the slot. App-authenticated
@@ -1154,7 +1158,13 @@ async def _api_chat_send(request: web.Request) -> web.StreamResponse:
         from kiro_crew.shared_crew.admission_entry import admission_pending
 
         _admission_pending = admission_pending(slot.key)
-        if steer and _person_send and not _auto_queues and not _admission_pending:
+        if (
+            steer
+            and _person_send
+            and not _auto_queues
+            and not _admission_pending
+            and not (_crew_paused and not slot.turn_running)
+        ):
             # Client-minted send correlation id (the same `meta.sendId`
             # convention the plain send path persists): thread it through the
             # steer so the persisted row and the steer_push echo can be matched

@@ -10,7 +10,7 @@ import logging
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
-from kiro_crew import model_scope
+from kiro_crew import crew_mode, crew_pause, model_scope
 from kiro_crew.agent_files import WORKER_AGENT_FILENAME
 from kiro_crew.agent_sdk.capabilities import capabilities_for
 from kiro_crew.config.loader import (
@@ -1041,6 +1041,15 @@ async def create_session(
     #
     # A dry run asks the same question without spending the token: a preview
     # must not use up the create it previews.
+    #
+    # Ahead of the rate guard: an Ultra Mode crew the person paused starts no new
+    # member until Resume all, from its root or from any member of its crew.
+    if crew_pause.blocks_create(caller_key, lambda: crew_mode.slot_is_crew_mode_root(live_caller)):
+        raise SessionControlError(
+            "the person paused this crew; nothing new starts until they resume it",
+            code="crew_paused",
+            status=409,
+        )
     admitted = (
         has_create_budget(SESSION_CREATE, caller_key)
         if dry_run

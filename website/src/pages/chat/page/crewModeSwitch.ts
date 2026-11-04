@@ -18,10 +18,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatSlot } from '../../../types'
 import { dropPanelViews, panelStripOf, type ViewKind } from '../../../hooks/usePanelTabs'
 import { useAppDispatch, useAppSelector } from '../../../store'
-import { closeActivityPanel, openActivityPanel } from '../../../store/chatSlice'
-import { crewModeAgent, gatewayRunsCrewMode, isDefaultAgentName, memoryModeAllowsCrewMode, runsConductor, runsCrewMode } from '../../../lib/crewMode'
+import { closeActivityPanel, openActivityPanel, setAgentSwitchNotice } from '../../../store/chatSlice'
+import { agentSwitchErrorNotice } from '../../../utils/agentSwitchFeedback'
+import { crewModeAgent, crewRootOf, gatewayRunsCrewMode, isDefaultAgentName, memoryModeAllowsCrewMode, runsConductor, runsCrewMode } from '../../../lib/crewMode'
 import { isRootSession } from '../command-center/model'
 import { useIsMobile } from '../../../hooks/useIsMobile'
+import { useConfirm } from '../../../components/ConfirmDialog'
+import { api } from '../../../api/client'
+import { i18nT } from '../../../i18n/t'
 
 const EMPTY: ReadonlySet<string> = new Set()
 // The tabs Ultra Mode puts on a chat's strip: Crew and Dashboard.
@@ -172,12 +176,47 @@ export function useCrewModeSwitch({ currentSlot, defaultAgent, hasUserMessage, s
     }).finally(() => setTurningOff(set => withoutKey(set, key)))
   }, [crewModeCancellable, currentSlot, switchAgent, defaultAgent, dispatch])
   // A plain ROOT chat that already has a message can still be turned into an
-  // Ultra Mode chat (one way: the gateway then locks it on the conductor). A
-  // crew member's chat is not a root, so it never offers this.
+  // Ultra Mode chat. A crew member's chat is not a root, so it never offers this.
   const crewModeMidChat = crewModeEligible && !crewModeChosen && hasUserMessage && isRootSession(currentSlot)
+  // A chat switched on that way can be switched back to the agent it had before
+  // (the gateway records it as `crew_mode_prior_agent`); one born in Ultra Mode
+  // has none and stays locked.
+  // A chat that was on the default agent names none: it goes back to the default template.
+  const priorAgent = currentSlot?.crew_mode_prior_agent || defaultAgent || 'kirocrew'
+  const crewModeSwitchBack = crewModeOn && !crewModeLeaving && hasUserMessage && !!currentSlot?.crew_mode_switch_back && isRootSession(currentSlot)
+  const switchBackKey = crewModeSwitchBack ? currentSlot!.key : ''
+  const runningWorkers = useAppSelector(s => (switchBackKey ? s.dashboard.slots.filter(x => crewRootOf(x) === switchBackKey && x.running).length : 0))
+  const { confirm, confirmDialog: crewSwitchBackDialog } = useConfirm()
+  const switchBack = useCallback(async () => {
+    if (!switchBackKey) return
+    const key = switchBackKey
+    // Running workers are paused first, with Pause all, once the person agrees.
+    if (runningWorkers > 0) {
+      if (!await confirm({
+        title: i18nT('components.crewMode.ultra_switch_back_confirm_title'),
+        body: i18nT('components.crewMode.ultra_switch_back_confirm_body', { count: runningWorkers }),
+        confirmLabel: i18nT('components.crewMode.ultra_switch_back_confirm'),
+        primary: true,
+      })) return
+      // A pause that fails leaves the chat in Ultra Mode, said on the switch's own notice.
+      try { await api.crewPause(key) } catch (error) { dispatch(setAgentSwitchNotice(agentSwitchErrorNotice(error))); return }
+    }
+    setTurningOff(set => withKey(set, key))
+    // What the strip held, so a refused switch (shown as its own notice) keeps the
+    // chat in Ultra Mode with its panel as it was.
+    const panelWasOpen = activityOpen
+    void switchAgent(priorAgent, 'template').then(ok => {
+      if (!ok) return
+      dropPanelViews(key, BOARD_VIEWS)
+      if (panelWasOpen && shownKey.current === key && panelStripOf(key).ids.length === 0) dispatch(closeActivityPanel())
+    }).finally(() => setTurningOff(set => withoutKey(set, key)))
+  }, [switchBackKey, runningWorkers, confirm, activityOpen, switchAgent, priorAgent, dispatch])
   return {
     crewModeEligible, crewModeOn, crewModeChosen, crewModeLeaving, crewModeSwitching, turnOnCrewMode, crewModeMidChat,
     turnOffCrewMode: crewModeCancellable ? turnOffCrewMode : undefined,
     openTaskBoard: taskBoardOffered ? openTaskBoard : undefined,
+    /** Switch a mid-chat Ultra Mode chat back to a normal chat; undefined when it cannot. */
+    switchBackCrewMode: crewModeSwitchBack ? () => { void switchBack() } : undefined,
+    crewSwitchBackDialog,
   }
 }
