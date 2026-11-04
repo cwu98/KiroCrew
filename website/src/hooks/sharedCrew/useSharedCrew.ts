@@ -99,6 +99,18 @@ export function useSessionDecisions(sessionKey: string | null | undefined, enabl
   })
 }
 
+/** The session's decisions as they sit in the cache, kept current by
+ *  `shared_crew.decision` frames. It never fetches: the chat's
+ *  `SessionCollabStrip` owns the read and says when it fails, so a card's label
+ *  and settled line never carry a second, silent failure path. */
+export function useCachedDecisions(sessionKey: string | null | undefined) {
+  return useQuery({
+    queryKey: sharedCrewKeys.decisions(sessionKey ?? ''),
+    queryFn: () => api.sharedCrewDecisions(sessionKey ?? ''),
+    enabled: false,
+  })
+}
+
 /** The session's send revision, read on open and after every reconnect (the
  *  socket's open invalidates `shared-crew`), then kept current by frames. The
  *  revision it reads is what this tab's next send is based on. */
