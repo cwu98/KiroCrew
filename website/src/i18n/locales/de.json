@@ -5828,6 +5828,7 @@
     },
     "warmBriefCard": {
       "asked": "Deine Anfrage",
+      "checked": "Geprüft",
       "done": "Erledigt",
       "label": "Zwischenstand",
       "more_waiting": "{{count}} weitere",

@@ -56,6 +56,18 @@ export interface WarmBrief {
   /** Structured asks: why, each option's consequence, the recommendation.
    *  Option labels are the gateway-checked source labels. */
   asks: WarmBriefAsk[]
+  /** What the gateway itself read for this brief; body lines cite them as `{fN}`. */
+  checked: WarmBriefFact[]
+}
+
+export interface WarmBriefFact {
+  /** `f1`, `f2`, ...: the id body lines cite. */
+  id: string
+  label: string
+  facts: string[]
+  /** Where it was read: `GitHub` or `work ledger`. */
+  source: string
+  readAt: string
 }
 
 export interface WarmBriefAsk {
@@ -118,6 +130,46 @@ function waitingOf(value: unknown): WarmBriefCardItem[] {
 }
 
 const MAX_ASK_OPTIONS = 6
+// Every id the gateway can mint (`f1`..`f200`, its `MAX_FACTS`), so each citation it lets the
+// body keep has its row.
+const MAX_FACTS = 200
+const FACT_ID_RE = /^f\d{1,3}$/
+
+function checkedOf(value: unknown): WarmBriefFact[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map(raw => {
+      const s = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+      const id = typeof s.id === 'string' && FACT_ID_RE.test(s.id) ? s.id : ''
+      return { id, label: text(s.label), facts: items(s.facts), source: text(s.source), readAt: text(s.read_at) }
+    })
+    .filter(f => f.id && f.label)
+    .slice(0, MAX_FACTS)
+}
+
+const SUPERSCRIPT = '⁰¹²³⁴⁵⁶⁷⁸⁹'
+/** `f12` as the footnote mark `¹²` the body and the Checked row share. */
+const mark = (digits: string) => [...digits].map(d => SUPERSCRIPT[Number(d)]).join('')
+/** The body's `{fN}` citations as footnote marks, so no template braces show. */
+const CITATION_RE = /[ \t]?\{f(\d{1,3})\}/g
+// A widget or fenced block is source, not prose: its text is left as written.
+const SOURCE_RE = /<mcwidget\b[\s\S]*?(?:<\/mcwidget\s*>|(?![\s\S]))|^ {0,3}(`{3,}|~{3,})[\s\S]*?(?:^ {0,3}\1[ \t]*$|(?![\s\S]))/gim
+const withMarks = (body: string) => {
+  let out = ''
+  let start = 0
+  for (const m of body.matchAll(SOURCE_RE)) {
+    out += body.slice(start, m.index).replace(CITATION_RE, (_, n: string) => mark(n)) + m[0]
+    start = m.index + m[0].length
+  }
+  return out + body.slice(start).replace(CITATION_RE, (_, n: string) => mark(n))
+}
+
+/** One checked fact as one line: `¹ owner/repo#N: merged · approved (GitHub 09:30)`. */
+export function factText(f: WarmBriefFact): string {
+  const values = f.facts.length ? `: ${f.facts.join(' · ')}` : ''
+  const where = [f.source, f.readAt].filter(Boolean).join(' ')
+  return `${mark(f.id.slice(1))} ${f.label}${values}${where ? ` (${where})` : ''}`
+}
 
 function asksOf(value: unknown): WarmBriefAsk[] {
   if (!Array.isArray(value)) return []
@@ -169,12 +221,13 @@ export function warmBriefOf(m: ChatMessage): WarmBrief | null {
     next: items(b.next),
     extra: extraOf(b.extra),
     // Code points, as the gateway counts: a UTF-16 cut could split a pair or drop a closing tag.
-    body: typeof b.body === 'string' ? Array.from(b.body.trim()).slice(0, MAX_BODY).join('') : '',
+    body: typeof b.body === 'string' ? withMarks(Array.from(b.body.trim()).slice(0, MAX_BODY).join('')) : '',
     waiting,
     waitingTotal: Number.isInteger(total) && (total as number) > waiting.length ? (total as number) : waiting.length,
     widget: typeof b.widget === 'string' && b.widget.length <= MAX_WIDGET ? b.widget.trim() : '',
     links: linksOf(b.links),
     asks: asksOf(b.asks),
+    checked: checkedOf(b.checked),
   }
 }
 
@@ -222,6 +275,7 @@ export function warmBriefVisibleText(brief: WarmBrief): string {
   const body = brief.body.replace(MCWIDGET_RE, '').trim()
   if (body) lines.push(body)
   lines.push(...brief.links.map(l => l.label))
+  if (brief.checked.length) lines.push(i18nT('components.warmBriefCard.checked'), ...brief.checked.map(factText))
   if (brief.asked) lines.push(askedText(brief))
   if (brief.done.length) lines.push(i18nT('components.warmBriefCard.done'), ...brief.done)
   if (brief.next.length) lines.push(i18nT('components.warmBriefCard.next'), ...brief.next)
@@ -356,6 +410,9 @@ export default function WarmBriefCard({ brief, messageTs, slotKey }: { brief: Wa
             <MarkdownRenderer content={brief.links.map(link => link.url).join(' ')} messageTs={messageTs} slotKey={slotKey} />
           </LinkUnfurlCtx.Provider>
         </div>
+      )}
+      {brief.checked.length > 0 && (
+        <Section title={i18nT('components.warmBriefCard.checked')} list={brief.checked.map(factText)} testId="warm-brief-checked" />
       )}
       {brief.asked && (
         <div className="text-[12px] leading-4 text-muted" data-testid="warm-brief-asked">

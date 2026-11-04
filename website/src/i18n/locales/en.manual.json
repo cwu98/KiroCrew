@@ -1630,6 +1630,7 @@
     },
     "warmBriefCard": {
       "asked": "You asked",
+      "checked": "Checked just now",
       "done": "Done so far",
       "label": "Catch-up",
       "more_waiting": "{{count}} more",

@@ -5828,6 +5828,7 @@
     },
     "warmBriefCard": {
       "asked": "তুমি বলেছিলে",
+      "checked": "যাচাই করা হয়েছে",
       "done": "যা হয়েছে",
       "label": "সারসংক্ষেপ",
       "more_waiting": "আরও {{count}}টি",

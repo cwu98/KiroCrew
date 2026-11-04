@@ -5828,6 +5828,7 @@
     },
     "warmBriefCard": {
       "asked": "तुमने कहा था",
+      "checked": "जाँचा गया",
       "done": "हो चुका",
       "label": "सारांश",
       "more_waiting": "{{count}} और",

@@ -5984,6 +5984,7 @@
     },
     "warmBriefCard": {
       "asked": "Pediste",
+      "checked": "Comprobado",
       "done": "Hecho",
       "label": "Puesta al día",
       "more_waiting": "{{count}} más",

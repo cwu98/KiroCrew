@@ -5672,6 +5672,7 @@
     },
     "warmBriefCard": {
       "asked": "요청하신 일",
+      "checked": "확인함",
       "done": "한 일",
       "label": "진행 요약",
       "more_waiting": "{{count}}개 더",

@@ -89,7 +89,8 @@ async def test_a_posted_brief_keeps_the_body_as_written_and_links_only_the_live_
             },
         ),
     )
-    body = "#12 is mergeable.\n\n```\nPR #12\n```"
+    # The line cites the live read's fact id, so it stays (M11).
+    body = "#12 is mergeable. {f1}\n\n```\nPR #12\n```"
 
     async def run_model(*args, **kwargs):
         return json.dumps({"headline": "Back.", "body": body})
