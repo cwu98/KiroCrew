@@ -48,6 +48,9 @@ from kiro_crew.shared_crew.tailscale_api import (
 logger = logging.getLogger(__name__)
 
 #: Where the owner shares this machine by hand when no key is connected.
+#: Names this transport on every invite row, so the dialog and the People list
+#: can hold invites from more than one sharing path.
+TRANSPORT = "tailscale"
 ADMIN_MACHINES_URL = "https://login.tailscale.com/admin/machines"
 ADMIN_KEYS_URL = "https://login.tailscale.com/admin/settings/keys"
 MAX_EMAILS = 20
@@ -231,6 +234,7 @@ def _invite_row(row: dict[str, Any], members: dict[str, Any]) -> dict[str, Any]:
     member = members.get(str(row.get("accepted_user_id") or ""))
     out = {
         "id": row.get("id"),
+        "transport": TRANSPORT,
         "kind": "email" if row.get("email") else "link",
         "email": row.get("email") or "",
         "multi_use": bool(row.get("multi_use")),
@@ -310,14 +314,56 @@ def clean_emails(raw: object) -> list[str]:
     return out
 
 
+def _waiting_by_email(state: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Each email invite nobody has accepted, keyed by lower-cased address."""
+    return {
+        str(row["email"]).strip().lower(): row
+        for row in (state.get("invites") or {}).values()
+        if row.get("email") and not row.get("accepted_user_id")
+    }
+
+
 async def create_invites(
     emails: list[str], *, multi_use: bool, alias: str, avatar_id: str, actor: str
 ) -> list[dict[str, Any]]:
     api, device_id = await asyncio.to_thread(_api)
+    # One create at a time: the waiting check and the store write must not
+    # interleave with another request for the same address.
+    async with _commit_lock():
+        return await _create_locked(
+            api,
+            device_id,
+            emails,
+            multi_use=multi_use,
+            alias=alias,
+            avatar_id=avatar_id,
+            actor=actor,
+        )
+
+
+async def _create_locked(
+    api: TailscaleApi,
+    device_id: str,
+    emails: list[str],
+    *,
+    multi_use: bool,
+    alias: str,
+    avatar_id: str,
+    actor: str,
+) -> list[dict[str, Any]]:
+    # An address with an invite still waiting gets that invite back, not a
+    # second one: two live invites for one person would both stay open.
+    before = await asyncio.to_thread(store.load_state)
+    waiting = _waiting_by_email(before)
+    reused = [waiting[e.lower()] for e in emails if e.lower() in waiting]
+    fresh = [e for e in emails if e.lower() not in waiting]
+    if emails and not fresh:
+        members = before.get("members") or {}
+        return [_invite_row(row, members) for row in reused]
     try:
-        made = await api.create_invites(device_id, emails, multi_use=multi_use and not emails)
+        made = await api.create_invites(device_id, fresh, multi_use=multi_use and not emails)
     except TailscaleApiError as exc:
-        for email in emails or [""]:
+        for email in fresh or [""]:
             await _audit_async("create", "error", actor, email=email, detail=exc.code)
         raise
     alias = store.clean_alias(alias)
@@ -341,7 +387,9 @@ async def create_invites(
     for invite in made:
         await _audit_async("create", "granted", actor, email=invite.email)
     members = state.get("members") or {}
-    return [_invite_row(state["invites"][i.id], members) for i in made]
+    return [_invite_row(row, members) for row in reused] + [
+        _invite_row(state["invites"][i.id], members) for i in made
+    ]
 
 
 async def resend(invite_id: str, actor: str) -> None:
@@ -465,7 +513,58 @@ async def sync(*, actor: str = "crew", force: bool = False) -> dict[str, Any]:
     async with _commit_lock():
         if await asyncio.to_thread(_governance_pinned, audit_tool="shared_crew_invite_admission"):
             raise InviteError(CODE_GOVERNANCE_PINNED, POLL_MAX_SECS)
-        return await _commit_accepts(invites, known, actor)
+        result = await _commit_accepts(invites, known, actor)
+        result["resolved"] = await _resolve_waiting_for_members(api, actor)
+        return result
+
+
+async def _resolve_waiting_for_members(api: TailscaleApi, actor: str) -> list[str]:
+    """Delete each email invite still waiting for a person who is already a member.
+
+    The invite is live at Tailscale until someone accepts it, and Tailscale lets
+    any account accept: once its address belongs to a current member (they came
+    in by another invite, or from another account) it only leaves a second door
+    open. Runs under :func:`_commit_lock`; a delete that fails is retried by the
+    next sync. Returns the ids dropped.
+    """
+    state = await asyncio.to_thread(store.load_state)
+    logins = {
+        _norm_login(str(m["login"]))
+        for m in (state.get("members") or {}).values()
+        if isinstance(m, dict) and m.get("login") and not m.get("removed")
+    }
+    stale = [
+        row
+        for row in (state.get("invites") or {}).values()
+        if row.get("email")
+        and not row.get("accepted_user_id")
+        and _norm_login(row["email"]) in logins
+    ]
+    dropped: list[str] = []
+    for row in stale:
+        invite_id = str(row["id"])
+        try:
+            await api.delete_invite(invite_id)
+        except TailscaleApiError as exc:
+            if exc.code != CODE_NOT_FOUND:
+                logger.warning("deleting a superseded invite failed", exc_info=True)
+                await _audit_async("resolve", "error", actor, email=row["email"], detail=exc.code)
+                if exc.code == CODE_RATE_LIMITED:
+                    # The rest would be refused too; the next sync tries again.
+                    break
+                continue
+        dropped.append(invite_id)
+        await _audit_async("resolve", "granted", actor, email=row["email"])
+    if dropped:
+
+        def _drop(s: dict[str, Any]) -> None:
+            for invite_id in dropped:
+                s["invites"].pop(invite_id, None)
+            ids = [i for i in s.get("revoked_invite_ids") or () if i not in dropped]
+            s["revoked_invite_ids"] = (ids + dropped)[-REVOKED_IDS_KEPT:]
+
+        await asyncio.to_thread(store.update_state, _drop)
+    return dropped
 
 
 def _known_invite_ids(state: dict[str, Any]) -> set[str]:
