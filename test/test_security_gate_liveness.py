@@ -679,7 +679,12 @@ def _url_payload_command(n: int) -> str:
 #: owner-gated reader, plus the optional ``reveal_id`` record key in
 #: ``credential_sources``. Nothing is relaxed: redaction still replaces every
 #: value in every saved copy, channel, log and model replay.
-_PACKAGE_LINE_BUDGET = 34_522
+#: Raised by 107, from 34,522, for ``scan_history`` reading ``sessions/*.jsonl``
+#: (``memory_audit``): the transcript row shapes, the fold of one tool call's rows
+#: by ``tool_call_id``, the non-shell tool kinds, row-time merge across files and
+#: the unreadable-file finding, so ``security audit`` never reports an unread
+#: scan as clean. No check was relaxed.
+_PACKAGE_LINE_BUDGET = 34_629
 
 #: Ceiling on any ONE file in the package. This is what the bound is really for --
 #: a package total says nothing about a single file growing back into a second
