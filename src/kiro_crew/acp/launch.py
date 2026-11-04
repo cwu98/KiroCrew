@@ -211,6 +211,30 @@ def _resolve_node_for_script(script_path: str) -> str | None:
     return None
 
 
+def _npm_windows_shim_target(shim: str, bin_name: str, package_target: Path) -> str | None:
+    """The file an npm Windows bin shim launches, or ``None`` when *shim* is not one.
+
+    On Windows, ``npm i -g`` cannot symlink a package's ``bin``, so it writes three
+    text shims into the global bin directory -- a bare ``<bin_name>`` (sh),
+    ``<bin_name>.cmd`` and ``<bin_name>.ps1`` -- each running
+    ``<that dir>/node_modules/<package_target>``. None of them is a program Node can
+    start: since the CVE-2024-27980 fix ``child_process.spawn`` refuses a ``.cmd`` or
+    ``.bat`` without a shell (``spawn EINVAL``), and the bare file is not a Windows
+    executable at all. Returning the target the shim names lets the caller run that
+    file itself, with no shell in between.
+
+    Matched by layout, not by reading the shim: a shim whose name is *bin_name* (any
+    extension) sitting next to ``node_modules/<package_target>``. Reading the shim's
+    text would trust a script anything on PATH can write; the layout check accepts
+    only the file npm itself would have put there.
+    """
+    path = Path(shim)
+    if path.stem.casefold() != bin_name.casefold():
+        return None
+    target = path.parent / "node_modules" / package_target
+    return str(target) if target.is_file() else None
+
+
 #: Sentinel for "not yet resolved": every host's cached resolution starts here, and the
 #: install probe compares a cache against this one object by identity.
 _UNRESOLVED: object = object()
@@ -254,6 +278,7 @@ def _resolve_node_adapter_argv(
     bin_name: str,
     override_env: str,
     vendored_entry: Callable[[], str | None],
+    package_entry: Path | None = None,
 ) -> tuple[list[str] | None, str]:
     """Find a Node stdio adapter's entry and the PATH searched for it.
 
@@ -279,6 +304,12 @@ def _resolve_node_adapter_argv(
       3. ``mise which <bin_name>`` (respects all mise config).
       4. Direct glob under mise installs (fallback if mise exec fails).
       5. Augmented PATH (includes mise shims, nvm, fnm, volta, npm -g).
+
+    On Windows a candidate that is the npm global bin shim for *bin_name* is replaced
+    by the *package_entry* script it runs (see :func:`_npm_windows_shim_target`), so
+    the adapter starts as ``[node, entry]`` -- the same argv as on POSIX, where the
+    npm bin is a symlink that ``resolve()`` already follows -- instead of through
+    ``cmd.exe``.
     """
     # Read through the client at call time: its unit tests rebind
     # ``kiro_crew.acp.client.subprocess_mod`` under ``_mise_which``, and that rebind has
@@ -322,6 +353,8 @@ def _resolve_node_adapter_argv(
         candidates.append(on_path)
 
     for script in candidates:
+        if platform_compat.IS_WINDOWS and package_entry is not None:
+            script = _npm_windows_shim_target(script, bin_name, package_entry) or script
         resolved = str(Path(script).resolve())
         node = _resolve_node_for_script(resolved)
         if node:

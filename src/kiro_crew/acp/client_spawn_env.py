@@ -239,6 +239,7 @@ def _resolve_codex_acp_bin() -> tuple[list[str] | None, str]:
         vendored_entry=lambda: launch_mod._vendored_adapter_entry(
             _CODEX_ACP_PKG_ENTRY, _CODEX_ACP_DEP_MARKER
         ),
+        package_entry=_CODEX_ACP_PKG_ENTRY,
     )
 
 
