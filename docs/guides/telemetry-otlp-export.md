@@ -427,6 +427,21 @@ Three things to take from this if you operate a collector:
   the consent gate, or bypass the attribute sanitiser; a destination that sets
   none of them behaves exactly as this guide describes.
 
+### The `PRODUCT_METRICS` preset
+
+`"allow": "PRODUCT_METRICS"` sends only the reviewed names below, from
+`src/kiro_crew/metrics/product_metrics.py`. Each is a counter or a gauge, and
+every attribute value on it comes from a closed set. Histograms,
+`kirocrew.process.*` and `kirocrew.turn.tokens` are not in it.
+
+| Group | Metrics (`kirocrew.` prefix omitted) |
+|---|---|
+| Sessions and turns | `session.started`, `session.idle_expired`, `subagent.spawned`, `subagent.completed`, `context.compactions`, `turn.completed`, `turn.timeout.cause` |
+| Crew sessions | `crew.session.started`, `crew.turn.started`, `crew.session.tree.depth`, `crew.session.tree.child`, `crew.session_control.calls` |
+| Work ledger and Crew Mode | `work.created`, `work.item_closed`, `work.dispatches`, `work.reports`, `crew_mode.turned_on`, `crew_mode.new_chats`, `crew_mode.runs_finished`, `crew_mode.steers_per_run`, `crew_mode.worker_waits` |
+| Features | `cron.fires`, `artifact.created`, `workflow.runs`, `approval.decisions`, `autonudge.loops.started`, `autonudge.loops.stopped`, `autonudge.ticks`, `monitor.decisions`, `webhook.requests`, `milestone.reached`, `milestone.starter_clicked`, `memory.recalled`, `lesson.injected`, `skill.lazy_load.count`, `app.task.completed`, `channel.message.received`, `ui.control.clicked` |
+| Inventory (gauges) | `inventory.crons.active`, `inventory.monitor_loops.active`, `inventory.skills.installed`, `inventory.memory.migrated`, `inventory.knowledge.documents`, `inventory.lessons`, `inventory.mcp.servers`, `inventory.config.toggle`, `inventory.probe.failures`, `inventory.members` |
+
 ### Before you build a per-host dashboard
 
 Kiro Crew sets `service.instance.id` explicitly to a random, persisted install
