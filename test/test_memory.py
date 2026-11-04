@@ -168,6 +168,42 @@ class TestRecentHistoryCache:
         results = store.search("nonexistent_term_xyz")
         assert results == []
 
+    def test_search_finds_line_added_to_file_on_disk(self, tmp_path):
+        """A line written straight into preferences.md on disk is found.
+
+        The store only updates the FTS index from its own writers, so an edit made
+        directly to the file (an editor, a sync tool, another process) bypasses the
+        index. search() reconciles the on-disk markdown before reading the index,
+        so the new line is found the same as one saved through the store.
+        """
+        store = MemoryStore(workspace=tmp_path)
+        store.init()
+        store.write_preferences("# Preferences\n\n- Likes tea\n")
+        store.rebuild_index()
+        assert store.search("quokkablossom") == []
+        # Append directly on disk, NOT through the store -- index is untouched.
+        prefs = tmp_path / "memory" / "preferences.md"
+        with prefs.open("a", encoding="utf-8") as f:
+            f.write("- Second p119 snack: quokkablossom tea\n")
+        results = store.search("quokkablossom")
+        assert len(results) >= 1
+        assert "quokkablossom" in results[0]["snippet"].lower()
+
+    def test_search_finds_history_file_edited_on_disk(self, tmp_path):
+        """An out-of-band edit to a history file is reconciled too."""
+        store = MemoryStore(workspace=tmp_path)
+        store.init()
+        store.append_history("first entry")
+        store.rebuild_index()
+        assert store.search("quokkablossom") == []
+        history_files = sorted((tmp_path / "memory" / "history").glob("*.md"))
+        assert history_files
+        with history_files[0].open("a", encoding="utf-8") as f:
+            f.write("\nlater: quokkablossom sighting\n")
+        results = store.search("quokkablossom")
+        assert len(results) >= 1
+        assert "quokkablossom" in results[0]["snippet"].lower()
+
     def test_rebuild_index(self, tmp_path):
         store = MemoryStore(workspace=tmp_path)
         store.init()
